@@ -17,13 +17,26 @@ import (
 	goahttp "goa.design/goa/http"
 )
 
-// Server lists the storage service endpoint HTTP handlers.
-type Server struct {
-	List   http.Handler
-	Show   http.Handler
-	Add    http.Handler
-	Remove http.Handler
-}
+type (
+	// Server lists the storage service endpoint HTTP handlers.
+	Server struct {
+		Mounts []*MountPoint
+		List   http.Handler
+		Show   http.Handler
+		Add    http.Handler
+		Remove http.Handler
+	}
+
+	// MountPoint holds information about mounted endpoints.
+	MountPoint struct {
+		// Method is the name of the service method served by the mounted HTTP handler.
+		Method string
+		// Verb is the HTTP method used to match requests to the mounted handler.
+		Verb string
+		// Pattern is the HTTP request path pattern used to match requests to the mounted handler.
+		Pattern string
+	}
+)
 
 // New instantiates HTTP handlers for all the storage service endpoints.
 func New(
@@ -33,6 +46,12 @@ func New(
 	enc func(context.Context, http.ResponseWriter) goahttp.Encoder,
 ) *Server {
 	return &Server{
+		Mounts: []*MountPoint{
+			{"List", "GET", "/storage"},
+			{"Show", "GET", "/storage/{id}"},
+			{"Add", "POST", "/storage"},
+			{"Remove", "DELETE", "/storage/{id}"},
+		},
 		List:   NewListHandler(e.List, mux, dec, enc),
 		Show:   NewShowHandler(e.Show, mux, dec, enc),
 		Add:    NewAddHandler(e.Add, mux, dec, enc),
@@ -224,3 +243,6 @@ func NewRemoveHandler(
 		}
 	})
 }
+
+// Service returns the name of the service served.
+func (s *Server) Service() string { return "Storage" }
